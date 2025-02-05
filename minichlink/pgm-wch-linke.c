@@ -162,20 +162,11 @@ static inline libusb_device_handle * wch_link_base_setup( int inhibit_startup, c
 									break;
 								}
 							}
-							// else
-							// {
-							// 	printf( "Failed to get serial number\n" );
-							// }
 							libusb_close( handle );
 						}
-						// else
-						// {
-						// 	printf( "Failed to open device\n" );
-						// }
 					}
 					else
 					{
-					//	printf( "Device does not have a serial number\n" );
 						found = device;
 					}
 				}
