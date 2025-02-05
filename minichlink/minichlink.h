@@ -195,13 +195,14 @@ struct InternalState
 typedef struct {
 	const char * serial_port;
 	const char * specific_programmer;
+	const char * serial_number;
 } init_hints_t;
 
 void * MiniCHLinkInitAsDLL(struct MiniChlinkFunctions ** MCFO, const init_hints_t* init_hints) DLLDECORATE;
 extern struct MiniChlinkFunctions MCF;
 
 // Returns 'dev' on success, else 0.
-void * TryInit_WCHLinkE(void);
+void * TryInit_WCHLinkE(const init_hints_t* init_hints);
 void * TryInit_ESP32S2CHFUN(void);
 void * TryInit_NHCLink042(void);
 void * TryInit_B003Fun(void);

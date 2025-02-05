@@ -122,7 +122,7 @@ static void wch_link_multicommands( libusb_device_handle * devh, int nrcommands,
 	va_end( argp );
 }
 
-static inline libusb_device_handle * wch_link_base_setup( int inhibit_startup )
+static inline libusb_device_handle * wch_link_base_setup( int inhibit_startup, const char * specpgm )
 {
 	libusb_context * ctx = 0;
 	int status;
@@ -144,7 +144,46 @@ static inline libusb_device_handle * wch_link_base_setup( int inhibit_startup )
 		libusb_device *device = list[i];
 		struct libusb_device_descriptor desc;
 		int r = libusb_get_device_descriptor(device,&desc);
-		if( r == 0 && desc.idVendor == 0x1a86 && desc.idProduct == 0x8010 ) { found = device; }
+		if( r == 0 && desc.idVendor == 0x1a86 && desc.idProduct == 0x8010 ) { 
+				if(specpgm != NULL) { 
+					if ( desc.iSerialNumber )
+					{
+						libusb_device_handle *handle;
+						r = libusb_open( device, &handle );
+						if ( r == 0 )
+						{
+							unsigned char serial_number[15];
+							int sr = libusb_get_string_descriptor_ascii(
+								handle, desc.iSerialNumber, serial_number, sizeof( serial_number ) );
+							if ( sr > 0 )
+							{
+								if (specpgm != NULL && strcmp((const char *)serial_number, specpgm) == 0) {
+									found = device;
+									break;
+								}
+							}
+							// else
+							// {
+							// 	printf( "Failed to get serial number\n" );
+							// }
+							libusb_close( handle );
+						}
+						// else
+						// {
+						// 	printf( "Failed to open device\n" );
+						// }
+					}
+					else
+					{
+					//	printf( "Device does not have a serial number\n" );
+						found = device;
+					}
+				}
+				else {
+					found = device;
+				}
+			
+			}
 		if( r == 0 && desc.idVendor == 0x1a86 && desc.idProduct == 0x8012) { found_arm_programmer = device; }
 		if( r == 0 && desc.idVendor == 0x4348 && desc.idProduct == 0x55e0) { found_programmer_in_iap = device; }
 	}
@@ -590,10 +629,11 @@ int LEExit( void * d )
 	return 0;
 }
 
-void * TryInit_WCHLinkE()
+void * TryInit_WCHLinkE(const init_hints_t* init_hints)
 {
 	libusb_device_handle * wch_linke_devh;
-	wch_linke_devh = wch_link_base_setup(0);
+	const char * selected_serial = init_hints->serial_number;
+	wch_linke_devh = wch_link_base_setup(0, selected_serial);
 	if( !wch_linke_devh ) return 0;
 
 	struct LinkEProgrammerStruct * ret = malloc( sizeof( struct LinkEProgrammerStruct ) );

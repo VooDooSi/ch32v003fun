@@ -37,7 +37,7 @@ void * MiniCHLinkInitAsDLL( struct MiniChlinkFunctions ** MCFO, const init_hints
 	if( specpgm )
 	{
 		if( strcmp( specpgm, "linke" ) == 0 )
-			dev = TryInit_WCHLinkE();
+			dev = TryInit_WCHLinkE(init_hints);
 		else if( strcmp( specpgm, "esp32s2chfun" ) == 0 )
 			dev = TryInit_ESP32S2CHFUN();
 		else if( strcmp( specpgm, "nchlink" ) == 0 )
@@ -49,9 +49,12 @@ void * MiniCHLinkInitAsDLL( struct MiniChlinkFunctions ** MCFO, const init_hints
 	}
 	else
 	{
-		if( (dev = TryInit_WCHLinkE()) )
+		if( (dev = TryInit_WCHLinkE(init_hints)) )
 		{
 			fprintf( stderr, "Found WCH Link\n" );
+			if (init_hints->serial_number != NULL) {
+				printf("Selected WCH-LinkE: %s\n", init_hints->serial_number); 
+			}
 		}
 		else if( (dev = TryInit_ESP32S2CHFUN()) )
 		{
@@ -121,6 +124,12 @@ int main( int argc, char ** argv )
 			i++;
 			if( i < argc )
 				hints.specific_programmer = argv[i];
+		}
+		else if( strncmp( v, "-Q", 2 ) == 0 )
+		{
+			i++;
+			if( i < argc )
+				hints.serial_number = argv[i];
 		}
 	}
 
@@ -228,6 +237,14 @@ keep_going:
 				else
 					goto unimplemented;
 				break;
+			case 'Q': // Select wchlinke by serial number
+				iarg+=1;
+				if( iarg >= argc )
+				{
+					fprintf( stderr, "-Q argument required 2 arguments\n" );
+					goto unimplemented;
+				}
+			break;
 			case 'C': // For specifying programmer
 			case 'c':
 				// COM port or programmer argument already parsed previously
@@ -715,6 +732,7 @@ help:
 	fprintf( stderr, " -5 Enable 5V\n" );
 	fprintf( stderr, " -t Disable 3.3V\n" );
 	fprintf( stderr, " -f Disable 5V\n" );
+	fprintf( stderr, " -Q [serial number of WCHLinkE] - select specific WCHLinkE programmer\n" ); 
 	fprintf( stderr, " -c [serial port for Ardulink, try /dev/ttyACM0 or COM11 etc]\n" );
 	fprintf( stderr, " -C [specified programmer, eg. b003boot, ardulink, esp32s2chfun]\n" );
 	fprintf( stderr, " -u Clear all code flash - by power off (also can unbrick)\n" );
